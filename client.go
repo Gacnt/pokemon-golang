@@ -115,6 +115,8 @@ func (c *Client) Write(msg *Msg) {
 		c.Emit(&SemiErrorEvent{err})
 	}
 
+	defer resp.Body.Close()
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		c.Emit(&SemiErrorEvent{})
