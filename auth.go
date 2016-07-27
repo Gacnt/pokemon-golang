@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Gacnt/gpsoaauth"
+	"github.com/pkmngo-odi/pogo-protos"
 )
 
 const (
@@ -25,6 +26,9 @@ const (
 
 type Auth struct {
 	client *Client
+
+	AuthType string
+	Token    string
 }
 
 type LogOnDetails struct {
@@ -33,23 +37,41 @@ type LogOnDetails struct {
 	AuthType string
 }
 
-type LoggedOnEvent struct{}
+// Helper function to set the authentication token
+func (a *Auth) SetAuthToken(token string) {
+	a.client.Auth.Token = token
+}
 
-func (a *Auth) Login(details *LogOnDetails) {
+func (a *Auth) Login() {
+	req := []*protos.Request{
+		&protos.Request{RequestType: 2},
+		&protos.Request{RequestType: 126},
+		&protos.Request{RequestType: 4},
+		&protos.Request{RequestType: 129},
+		&protos.Request{RequestType: 5},
+	}
+
+	a.client.Write(&Msg{
+		RequestURL: "https://pgorelease.nianticlabs.com/plfe/rpc",
+		Requests:   req,
+	})
+}
+
+func (a *Auth) GetToken(details *LogOnDetails) {
 	if details.AuthType == "ptc" {
 		data, err := authWithPTC(details)
 		if err != nil {
-			log.Println(err)
+			a.client.Emit(&FatalErrorEvent{err})
 		}
-		a.client.AuthToken = data
-		a.client.Emit(&LoggedOnEvent{}) // Login Was Successful
+		a.AuthType = "ptc"
+		a.client.Emit(&AuthedEvent{data}) // Login Was Successful
 	} else if details.AuthType == "google" {
 		data, err := authWithGoogle(details)
 		if err != nil {
-			log.Println(err)
+			a.client.Emit(&FatalErrorEvent{err})
 		}
-		a.client.AuthToken = data
-		a.client.Emit(&LoggedOnEvent{}) // Login Was Successful
+		a.AuthType = "google"
+		a.client.Emit(&AuthedEvent{data}) // Login Was Successful
 	} else {
 		log.Printf("[!] For LogOnDetails, you must set AuthType to either `ptc` or `google`, recieved: %s", details.AuthType)
 	}
@@ -62,7 +84,7 @@ func authWithPTC(details *LogOnDetails) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("Failed to create new cookiejar for client")
 	}
-	newClient := &http.Client{Jar: jar, Timeout: 5 * time.Second}
+	newClient := &http.Client{Jar: jar, Timeout: 15 * time.Second}
 
 	// First Request
 
@@ -73,7 +95,7 @@ func authWithPTC(details *LogOnDetails) (string, error) {
 	req.Header.Set("User-Agent", "niantic")
 	firstResp, err := newClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("Failed to send intial handshake: %v", err)
+		return "", fmt.Errorf("Failed to send intial handshake: Possible wrong Username or Password", err)
 	}
 	respJSON := make(map[string]string)
 	err = json.NewDecoder(firstResp.Body).Decode(&respJSON)
@@ -107,7 +129,7 @@ func authWithPTC(details *LogOnDetails) (string, error) {
 	if strings.Contains(ticket, "ticket") {
 		ticket = strings.Split(ticket, "ticket=")[1]
 	} else {
-		return "", fmt.Errorf("Failed could not get the Ticket from the second request\n")
+		return "", fmt.Errorf("Failed could not get the Ticket from the second request\n.. Possible wrong Username or Password")
 	}
 	defer secResp.Body.Close()
 
