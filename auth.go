@@ -43,13 +43,15 @@ func (a *Auth) Login(details *LogOnDetails) {
 		}
 		a.client.AuthToken = data
 		a.client.Emit(&LoggedOnEvent{}) // Login Was Successful
-	} else {
+	} else if details.AuthType == "google" {
 		data, err := authWithGoogle(details)
 		if err != nil {
 			log.Println(err)
 		}
 		a.client.AuthToken = data
 		a.client.Emit(&LoggedOnEvent{}) // Login Was Successful
+	} else {
+		log.Printf("[!] For LogOnDetails, you must set AuthType to either `ptc` or `google`, recieved: %s", details.AuthType)
 	}
 }
 
