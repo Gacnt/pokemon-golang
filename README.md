@@ -37,21 +37,29 @@ func main() {
 	loginInfo := new(pgo.LogOnDetails)
 	loginInfo.Username = "Username"
 	loginInfo.Password = "Password"
-	loginInfo.AuthType = "google"
+	loginInfo.AuthType = "ptc"
 
-        // Send Initial Request
 	client.Auth.GetToken(loginInfo)
-
-        // Begin Event Listener
 	for event := range client.Events() {
 		switch e := event.(type) {
 		case *pgo.AuthedEvent:
 			client.Auth.SetAuthToken(e.AuthToken)
+			client.Location.SetByName("New York")
 			client.Auth.Login()
-			log.Println("Set Token")
 		case *pgo.LoggedOnEvent:
 			client.SetAPIUrl(e.APIUrl)
-			log.Println(client.GetAPIUrl())
+			go func() {
+				pgo.GetMapData(client)
+			}()
+		case *pgo.LocationSet:
+			log.Println("Location has been set")
+			log.Printf("%+v", *e.Location)
+		case *pgo.NearbyPokemonEvent:
+			log.Println(e)
+		case *pgo.WildPokemonEvent:
+			log.Println(e)
+		case *pgo.CatchablePokemonEvent:
+			log.Println(e)
 		case *pgo.FatalErrorEvent:
 			log.Println(e.Err)
 		default:
@@ -60,3 +68,5 @@ func main() {
 	}
 }
 ```
+
+For documentation please visit https://godoc.org/github.com/Gacnt/pokemon-golang
