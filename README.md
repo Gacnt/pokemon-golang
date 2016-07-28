@@ -18,6 +18,7 @@ implementation of Pokemon-Gos API for easily building a fast, reliable, automate
 - [ ] Transfer Flagged Pokemon
 - [ ] Auto Hatch Eggs
 - [ ] Evolve Pokemon
+- [ ] Make Errors More Descriptive For Easier Debugging
 
 # Example Usage
 
