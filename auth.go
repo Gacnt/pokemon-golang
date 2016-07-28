@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Gacnt/gpsoaauth"
+	"github.com/Gacnt/gpsoauth-go"
 	"github.com/pkmngo-odi/pogo-protos"
 )
 
