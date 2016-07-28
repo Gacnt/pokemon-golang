@@ -1,5 +1,7 @@
 # Pokemon-Golang
-Pokemon-Golang is soon to be a fully automated Pokemon-GO bot.
+Pokemon-Golang is not necessarily a bot, but it provides the set of tools in a very easy to use way to create your own 
+bot that is custom to your needs. Examples will be released a long the way, and my own version of a bot built using this 
+very simple API
 
 Driven by Go's channels, concurrency, and amazingly fast protobuf interacting, this is aimed to be the fastest 
 implementation of Pokemon-Gos API for easily building a fast, reliable, automated bot.
