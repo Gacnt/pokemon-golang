@@ -71,3 +71,5 @@ func main() {
 ```
 
 For documentation please visit https://godoc.org/github.com/Gacnt/pokemon-golang
+
+This API structure was heavily inspired by [Philipp15b's Go Steam API](https://github.com/Philipp15b/go-steam)
