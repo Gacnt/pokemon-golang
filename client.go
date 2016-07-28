@@ -15,9 +15,7 @@ type Client struct {
 	Auth   *Auth
 	APIUrl string
 
-	Altitude  float64
-	Latitude  float64
-	Longitude float64
+	Location *Location
 
 	events   chan interface{}
 	writeBuf *bytes.Buffer
@@ -35,6 +33,7 @@ func NewClient() *Client {
 	}
 
 	client.Auth = &Auth{client: client}
+	client.Location = &Location{client: client}
 
 	return client
 }
@@ -51,18 +50,6 @@ func (c *Client) Emit(event interface{}) {
 // at login
 func (c *Client) Token() string {
 	return c.Auth.Token
-}
-
-func (c *Client) GetLatitude() float64 {
-	return c.Latitude
-}
-
-func (c *Client) GetLongitude() float64 {
-	return c.Longitude
-}
-
-func (c *Client) GetAltitude() float64 {
-	return c.Altitude
 }
 
 func (c *Client) SetAPIUrl(url string) {
@@ -90,9 +77,9 @@ func (c *Client) Write(msg *Msg) {
 
 		Requests: msg.Requests,
 
-		Latitude:  c.GetLatitude(),
-		Longitude: c.GetLongitude(),
-		Altitude:  c.GetAltitude(),
+		Latitude:  c.Location.GetLatitudeF(),
+		Longitude: c.Location.GetLongitudeF(),
+		Altitude:  c.Location.GetAltitudeF(),
 
 		AuthInfo: auth,
 
