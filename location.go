@@ -92,14 +92,14 @@ func (l *Location) SetByCoords(lat, lng, alt float64) {
 	l.client.Emit(&LocationSet{l})
 }
 
-func (l *Location) GetNeighbors() []*uint64 {
+func (l *Location) GetNeighbors() []uint64 {
 	ll := s2.LatLngFromDegrees(l.Latitude, l.Longitude)
-	cid := s2.CellIDFromLatLng(ll)
+	cid := s2.CellIDFromLatLng(ll).Parent(15)
 
 	walker := []uint64{uint64(cid)}
 	next := cid.Next()
 	prev := cid.Prev()
-	for i := 0; i > 10; i++ {
+	for i := 0; i < 10; i++ {
 		walker = append(walker, uint64(next))
 		walker = append(walker, uint64(prev))
 		next = next.Next()

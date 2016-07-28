@@ -51,10 +51,17 @@ func (a *Auth) Login() {
 		&protos.Request{RequestType: 5},
 	}
 
-	a.client.Write(&Msg{
+	resp, err := a.client.Write(&Msg{
 		RequestURL: "https://pgorelease.nianticlabs.com/plfe/rpc",
 		Requests:   req,
 	})
+
+	if err != nil {
+		a.client.Emit(&SemiErrorEvent{err})
+	}
+
+	a.client.Emit(&LoggedOnEvent{resp.ApiUrl})
+
 }
 
 func (a *Auth) GetToken(details *LogOnDetails) {

@@ -61,7 +61,7 @@ func (c *Client) GetAPIUrl() string {
 }
 
 // Send messages to the server
-func (c *Client) Write(msg *Msg) {
+func (c *Client) Write(msg *Msg) (*protos.ResponseEnvelope, error) {
 	jwt := &protos.RequestEnvelope_AuthInfo_JWT{
 		c.Auth.Token,
 		59,
@@ -87,40 +87,34 @@ func (c *Client) Write(msg *Msg) {
 	}
 	reqProto, err := proto.Marshal(request)
 	if err != nil {
-		c.Emit(&SemiErrorEvent{err})
+		return nil, err
 	}
 
 	cookieJar, _ := cookiejar.New(nil)
 	client := &http.Client{Timeout: 15 * time.Second, Jar: cookieJar}
 	req, err := http.NewRequest("POST", msg.RequestURL, bytes.NewReader(reqProto))
 	if err != nil {
-		c.Emit(&SemiErrorEvent{err})
+		return nil, err
 	}
 	req.Header.Set("User-Agent", "niantic")
 	resp, err := client.Do(req)
 	if err != nil {
-		c.Emit(&SemiErrorEvent{err})
+		return nil, err
 	}
 
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		c.Emit(&SemiErrorEvent{})
+		return nil, err
 	}
 
 	bodyData := &protos.ResponseEnvelope{}
 	err = proto.Unmarshal(body, bodyData)
 	if err != nil {
-		c.Emit(&SemiErrorEvent{err})
+		return nil, err
 	}
 
-	c.SortProto(bodyData)
-}
+	return bodyData, err
 
-func (c *Client) SortProto(data *protos.ResponseEnvelope) {
-	switch data.StatusCode {
-	case 53:
-		c.Emit(&LoggedOnEvent{data.ApiUrl})
-	}
 }
