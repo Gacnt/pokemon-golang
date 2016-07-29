@@ -9,6 +9,13 @@ import (
 	"github.com/kellydunn/golang-geo"
 )
 
+const (
+	WALKING_SPEED float64 = 1.3  // meters per second
+	RUNNING_SPEED float64 = 6.4  // meters per second
+	BIKING_SPEED  float64 = 12.3 // meters per second
+	DRIVING_SPEED float64 = 16.7 // meters per second
+)
+
 type Location struct {
 	client *Client
 

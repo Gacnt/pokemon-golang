@@ -11,7 +11,7 @@ implementation of Pokemon-Gos API for easily building a fast, reliable, automate
 - [x] View Pokemon / Forts Nearby You
 - [ ] Visit Pokestops
 - [ ] Farm Pokestops
-- [ ] GPS Spoofing interpolated as Human
+- [x] GPS Spoofing interpolated as Human
 - [ ] Catch Pokemon
 - [ ] Catch Only Certain Pokemon
 - [ ] Remove Excess Items When Over X Quantities
