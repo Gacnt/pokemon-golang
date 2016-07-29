@@ -62,9 +62,9 @@ func main() {
 		case *pgo.CatchablePokemonEvent:
 			log.Println(e)
 		case *pgo.MovingUpdateEvent:
-			log.Println(e)
+			log.Println("HERE)
 		case *pgo.MovingDoneEvent:
-			log.Println(e)
+			log.Println("DONE)
 		case *pgo.FatalErrorEvent:
 			log.Println(e.Err)
 		default:
