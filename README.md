@@ -23,7 +23,7 @@ implementation of Pokemon-Gos API for easily building a fast, reliable, automate
 # Example Usage
 
 
-```
+```go
 package main
 
 import (
