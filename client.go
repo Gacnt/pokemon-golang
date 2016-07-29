@@ -34,6 +34,7 @@ func NewClient() *Client {
 
 	client.Auth = &Auth{client: client}
 	client.Location = &Location{client: client}
+	client.Location.Moving = &Moving{Stop: make(chan interface{})}
 
 	return client
 }

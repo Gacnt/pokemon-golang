@@ -45,28 +45,45 @@ func main() {
 		switch e := event.(type) {
 		case *pgo.AuthedEvent:
 			client.Auth.SetAuthToken(e.AuthToken)
-			client.Location.SetByName("New York")
+			client.Location.SetByLocation("New York")
 			client.Auth.Login()
 		case *pgo.LoggedOnEvent:
 			client.SetAPIUrl(e.APIUrl)
-			go func() {
+			/*go func() {
 				pgo.GetMapData(client)
-			}()
+			}()*/
 		case *pgo.LocationSet:
 			log.Println("Location has been set")
 			log.Printf("%+v", *e.Location)
+			client.Location.Move(&pgo.Location{
+				Latitude:  56.654504464478116,
+				Longitude: -111.33012771606445,
+			}, 15.3)
+
+			// Demonstrating changing paths mid-stride
+			go func() {
+				time.Sleep(3 * time.Second)
+				client.Location.Move(&pgo.Location{
+					Latitude:  57.654504464478,
+					Longitude: -112.3301277160,
+				}, 15.3)
+			}()
+		case *pgo.MovingDirectionChangedEvent:
+			log.Println("Changing Directions")
+		case *pgo.MovingUpdateEvent:
+			log.Printf("Latitude: %v Longitude: %v ............ Distance Travelled: %v Distance Total: %v",
+				e.Location.Latitude, e.Location.Longitude, e.DistanceTravelled, e.DistanceTotal)
+		case *pgo.MovingDoneEvent:
+			log.Println("DONE")
 		case *pgo.NearbyPokemonEvent:
 			log.Println(e)
 		case *pgo.WildPokemonEvent:
 			log.Println(e)
 		case *pgo.CatchablePokemonEvent:
 			log.Println(e)
-		case *pgo.MovingUpdateEvent:
-			log.Println("HERE)
-		case *pgo.MovingDoneEvent:
-			log.Println("DONE)
 		case *pgo.FatalErrorEvent:
 			log.Println(e.Err)
+
 		default:
 			log.Printf("Uncaught Event was fired: \nType: %v\n Value: %+v", reflect.TypeOf(e), e)
 		}

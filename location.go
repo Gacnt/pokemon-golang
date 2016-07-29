@@ -24,6 +24,15 @@ type Location struct {
 	Latitude  float64
 	Longitude float64
 	Altitude  float64
+
+	Moving *Moving
+}
+
+type Moving struct {
+	IsMoving          bool
+	Distance          float64
+	DistanceTravelled float64
+	Stop              chan interface{}
 }
 
 type Locnum float64
@@ -116,8 +125,40 @@ func (l *Location) GetNeighbors() []uint64 {
 	return walker
 }
 
+func (l *Location) Teleport(newLoc *Location) {
+	// Teleport preferably a short distance, teleporting too far
+	// will probably result in the bot getting a soft lock which
+	// may result in unexpected and unidentifed behaviours like
+	// releasing Godzilla or worse yet, a Gyrados
+
+	l.SetLatitude(Locnum(newLoc.Latitude))
+	l.SetLongitude(Locnum(newLoc.Longitude))
+
+	l.client.Emit(&MovingDoneEvent{})
+}
+
+// This will call the bot to move to a new location
+// Note: calling this while the bot is already moving will cause its currently set
+// destination to change to the new location.
+// If you want your bot to visit both spots, wait until the `MovingDoneEvent` is fired before calling
+// `Move` again
 func (l *Location) Move(newLoc *Location, speed float64) {
-	R := 6371000.0 // Kilometers
+
+	// Check if bot is already moving
+	if l.Moving.IsMoving {
+		// If Bot is moving block until the channel is read from
+		// meaning the bot has stopped moving
+		l.Moving.Stop <- true
+		l.client.Emit(&MovingDirectionChangedEvent{newLoc})
+	}
+
+	// Set IsMoving to true so the bot knows it is currently moving in the world
+	l.Moving.IsMoving = true
+
+	// Find out in a straight line, roughly how far of a distance
+	// the target location is from point `A` to point `B` in
+	// meters
+	R := 6371000.0 // Meters
 	lat1 := l.Latitude * math.Pi / 180
 	lat2 := l.Longitude * math.Pi / 180
 	diffLatRad := (newLoc.Latitude - l.Latitude) * math.Pi / 180
@@ -127,32 +168,60 @@ func (l *Location) Move(newLoc *Location, speed float64) {
 		math.Cos(lat1)*math.Cos(lat2)*math.Sin(diffLonRad/2)*math.Sin(diffLonRad/2)
 	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
 
-	distanceToMove := R * c // Distance to travel in a straight line, in Kilometers
+	distanceToMove := R * c // Distance to travel in a straight line, in meters (meters / 1000 to get Kilometers)
 	distanceActuallyTravelled := 0.0
+
+	l.Moving.Distance = distanceToMove
+
+	// Using the found distance of `distanceToMove` calculate and move
+	// to the next point with the set speed in `meters per second`
 	ticker := time.Tick(time.Second * 1)
-	go func() {
+	go func(newLoc *Location, distanceTotal, distanceMoved float64) {
 		for stop := false; !stop; {
 			select {
+			case <-l.Moving.Stop:
+				// Bot was manually told to stop wherever it is at this time
+				// bot will stand here until it receives another move event
+				stop = true
+				l.Moving.IsMoving = false
+				l.client.Emit(&MovingDoneEvent{})
+				break
 			case <-ticker:
-				deltaLat := (newLoc.Latitude - l.Latitude) * (distanceActuallyTravelled / distanceToMove)
-				deltaLng := (newLoc.Longitude - l.Longitude) * (distanceActuallyTravelled / distanceToMove)
+				deltaLat := (newLoc.Latitude - l.Latitude) * (distanceMoved / distanceTotal)
+				deltaLng := (newLoc.Longitude - l.Longitude) * (distanceMoved / distanceTotal)
 				newLat := l.GetLatitudeF() + deltaLat
 				newLng := l.GetLongitudeF() + deltaLng
 				l.SetLatitude(Locnum(newLat))
 				l.SetLongitude(Locnum(newLng))
-				l.client.Emit(&MovingUpdateEvent{})
+				l.client.Emit(&MovingUpdateEvent{Location: &Location{
+					Latitude:  newLat,
+					Longitude: newLng,
+					Moving:    l.Moving,
+				},
+					DistanceTravelled: distanceMoved,
+					DistanceTotal:     distanceTotal,
+				})
 				if distanceActuallyTravelled >= distanceToMove {
 					// Bot may be traveling too fast to get an accurate landing and
 					// might overshoot the location, once overshot
 					// default to the destination.
 					l.SetLatitude(Locnum(newLoc.Latitude))
 					l.SetLongitude(Locnum(newLoc.Longitude))
-					l.client.Emit(&MovingDoneEvent{})
+					l.client.Emit(&MovingDoneEvent{l})
 					stop = true
 				}
-				distanceActuallyTravelled = distanceActuallyTravelled + speed
+				distanceMoved = distanceMoved + speed
+				l.Moving.DistanceTravelled = distanceMoved
 			}
 		}
-	}()
+	}(newLoc, distanceToMove, distanceActuallyTravelled)
 
+}
+
+func (m *Moving) Sit(client *Client) {
+	if m.IsMoving {
+		m.Stop <- true
+	}
+
+	client.Emit(&MovingDoneEvent{client.Location})
 }
