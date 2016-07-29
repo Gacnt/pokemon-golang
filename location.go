@@ -1,7 +1,6 @@
 package pgo
 
 import (
-	"log"
 	"math"
 	"strconv"
 	"time"
@@ -64,7 +63,6 @@ func (l *Location) GetAltitudeF() float64 {
 
 func (l *Location) SetByLocation(name string) {
 	geoLoc := &geo.GoogleGeocoder{}
-
 	p, err := geoLoc.Geocode(name)
 	if err != nil {
 		l.client.Emit(&SemiErrorEvent{err})
@@ -86,7 +84,6 @@ func (l *Location) SetByCoords(lat, lng, alt float64) {
 	if err != nil {
 		l.client.Emit(&SemiErrorEvent{err})
 	}
-
 	l.Name = name
 	l.Altitude = alt
 	l.Longitude = lng
@@ -116,37 +113,35 @@ func (l *Location) Move(newLoc *Location, speed float64) {
 	R := 6371000.0 // Kilometers
 	lat1 := l.Latitude * math.Pi / 180
 	lat2 := l.Longitude * math.Pi / 180
-	diffLat := (newLoc.Latitude - l.Latitude) * math.Pi / 180
-	diffLon := (newLoc.Longitude - l.Longitude) * math.Pi / 180
+	diffLatRad := (newLoc.Latitude - l.Latitude) * math.Pi / 180
+	diffLonRad := (newLoc.Longitude - l.Longitude) * math.Pi / 180
 
-	a := math.Sin(diffLat/2)*math.Sin(diffLat/2) +
-		math.Cos(lat1)*math.Cos(lat2)*math.Sin(diffLon/2)*math.Sin(diffLon/2)
+	a := math.Sin(diffLatRad/2)*math.Sin(diffLatRad/2) +
+		math.Cos(lat1)*math.Cos(lat2)*math.Sin(diffLonRad/2)*math.Sin(diffLonRad/2)
 	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
 
 	distanceToMove := R * c // Distance to travel in a straight line, in Kilometers
 	distanceActuallyTravelled := 0.0
-	oldLat := l.GetLatitudeF()
-	oldLng := l.GetLongitudeF()
-
-	for {
-		distanceActuallyTravelled += (speed)
-		newLat := Locnum((distanceActuallyTravelled/distanceToMove)*newLoc.Latitude + oldLat)
-		newLng := Locnum((distanceActuallyTravelled/distanceToMove)*newLoc.Longitude + oldLng)
-
-		log.Printf("%v %v %v %v", float64(newLat), newLoc.Latitude, float64(newLng), newLoc.Longitude)
-		if float64(newLat) >= newLoc.Latitude || float64(newLng) >= newLoc.Longitude {
-			if float64(newLat) < newLoc.Latitude {
-				l.SetLatitude(newLat)
+	ticker := time.Tick(time.Second * 1)
+	for stop := false; !stop; {
+		select {
+		case <-ticker:
+			deltaLat := (newLoc.Latitude - l.Latitude) * (distanceActuallyTravelled / distanceToMove)
+			deltaLng := (newLoc.Longitude - l.Longitude) * (distanceActuallyTravelled / distanceToMove)
+			newLat := l.GetLatitudeF() + deltaLat
+			newLng := l.GetLongitudeF() + deltaLng
+			l.SetLatitude(Locnum(newLat))
+			l.SetLongitude(Locnum(newLng))
+			if distanceActuallyTravelled >= distanceToMove {
+				// Bot may be traveling too fast to get an accurate landing and
+				// might overshoot the location, once overshot
+				// default to the destination.
+				l.SetLatitude(Locnum(newLoc.Latitude))
+				l.SetLongitude(Locnum(newLoc.Longitude))
+				stop = true
 			}
-			if float64(newLng) < newLoc.Longitude {
-				l.SetLongitude(newLng)
-			}
-		} else {
-			break
+			distanceActuallyTravelled = distanceActuallyTravelled + speed
 		}
-
-		log.Println(l)
-		time.Sleep(time.Second)
 	}
 
 }
