@@ -28,7 +28,7 @@ type Msg struct {
 
 func NewClient() *Client {
 	client := &Client{
-		events:   make(chan interface{}, 3),
+		events:   make(chan interface{}, 6),
 		writeBuf: new(bytes.Buffer),
 	}
 

@@ -130,25 +130,29 @@ func (l *Location) Move(newLoc *Location, speed float64) {
 	distanceToMove := R * c // Distance to travel in a straight line, in Kilometers
 	distanceActuallyTravelled := 0.0
 	ticker := time.Tick(time.Second * 1)
-	for stop := false; !stop; {
-		select {
-		case <-ticker:
-			deltaLat := (newLoc.Latitude - l.Latitude) * (distanceActuallyTravelled / distanceToMove)
-			deltaLng := (newLoc.Longitude - l.Longitude) * (distanceActuallyTravelled / distanceToMove)
-			newLat := l.GetLatitudeF() + deltaLat
-			newLng := l.GetLongitudeF() + deltaLng
-			l.SetLatitude(Locnum(newLat))
-			l.SetLongitude(Locnum(newLng))
-			if distanceActuallyTravelled >= distanceToMove {
-				// Bot may be traveling too fast to get an accurate landing and
-				// might overshoot the location, once overshot
-				// default to the destination.
-				l.SetLatitude(Locnum(newLoc.Latitude))
-				l.SetLongitude(Locnum(newLoc.Longitude))
-				stop = true
+	go func() {
+		for stop := false; !stop; {
+			select {
+			case <-ticker:
+				deltaLat := (newLoc.Latitude - l.Latitude) * (distanceActuallyTravelled / distanceToMove)
+				deltaLng := (newLoc.Longitude - l.Longitude) * (distanceActuallyTravelled / distanceToMove)
+				newLat := l.GetLatitudeF() + deltaLat
+				newLng := l.GetLongitudeF() + deltaLng
+				l.SetLatitude(Locnum(newLat))
+				l.SetLongitude(Locnum(newLng))
+				l.client.Emit(&MovingUpdateEvent{})
+				if distanceActuallyTravelled >= distanceToMove {
+					// Bot may be traveling too fast to get an accurate landing and
+					// might overshoot the location, once overshot
+					// default to the destination.
+					l.SetLatitude(Locnum(newLoc.Latitude))
+					l.SetLongitude(Locnum(newLoc.Longitude))
+					l.client.Emit(&MovingDoneEvent{})
+					stop = true
+				}
+				distanceActuallyTravelled = distanceActuallyTravelled + speed
 			}
-			distanceActuallyTravelled = distanceActuallyTravelled + speed
 		}
-	}
+	}()
 
 }
