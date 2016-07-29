@@ -125,11 +125,11 @@ func (l *Location) GetNeighbors() []uint64 {
 	return walker
 }
 
+// Teleport preferably a short distance, teleporting too far
+// will probably result in the bot getting a soft lock which
+// may result in unexpected and unidentifed behaviours like
+// releasing Godzilla or worse yet, a Gyrados
 func (l *Location) Teleport(newLoc *Location) {
-	// Teleport preferably a short distance, teleporting too far
-	// will probably result in the bot getting a soft lock which
-	// may result in unexpected and unidentifed behaviours like
-	// releasing Godzilla or worse yet, a Gyrados
 
 	l.SetLatitude(Locnum(newLoc.Latitude))
 	l.SetLongitude(Locnum(newLoc.Longitude))
