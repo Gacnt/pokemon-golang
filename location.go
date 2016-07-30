@@ -142,6 +142,8 @@ func (l *Location) Teleport(newLoc *Location) {
 // destination to change to the new location.
 // If you want your bot to visit both spots, wait until the `MovingDoneEvent` is fired before calling
 // `Move` again
+// This function WILL BLOCK THE EVENT LOOP if you want to move somewhere I suggest
+// running this function in its own goroutine
 func (l *Location) Move(newLoc *Location, speed float64) {
 
 	// Check if bot is already moving
@@ -168,56 +170,55 @@ func (l *Location) Move(newLoc *Location, speed float64) {
 		math.Cos(lat1)*math.Cos(lat2)*math.Sin(diffLonRad/2)*math.Sin(diffLonRad/2)
 	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
 
-	distanceToMove := R * c // Distance to travel in a straight line, in meters (meters / 1000 to get Kilometers)
-	distanceActuallyTravelled := 0.0
+	distanceTotal := R * c // Distance to travel in a straight line, in meters (meters / 1000 to get Kilometers)
+	distanceMoved := 0.0
 
-	l.Moving.Distance = distanceToMove
+	l.Moving.Distance = distanceTotal
 
 	// Using the found distance of `distanceToMove` calculate and move
 	// to the next point with the set speed in `meters per second`
 	ticker := time.Tick(time.Second * 1)
-	go func(newLoc *Location, distanceTotal, distanceMoved float64) {
-		for stop := false; !stop; {
-			select {
-			case <-l.Moving.Stop:
-				// Bot was manually told to stop wherever it is at this time
-				// bot will stand here until it receives another move event
+	for stop := false; !stop; {
+		select {
+		case <-l.Moving.Stop:
+			// Bot was manually told to stop wherever it is at this time
+			// bot will stand here until it receives another move event
+			stop = true
+			l.Moving.IsMoving = false
+			l.client.Emit(&MovingDoneEvent{})
+			break
+		case <-ticker:
+			deltaLat := (newLoc.Latitude - l.Latitude) * (distanceMoved / distanceTotal)
+			deltaLng := (newLoc.Longitude - l.Longitude) * (distanceMoved / distanceTotal)
+			newLat := l.GetLatitudeF() + deltaLat
+			newLng := l.GetLongitudeF() + deltaLng
+			l.SetLatitude(Locnum(newLat))
+			l.SetLongitude(Locnum(newLng))
+			l.client.Emit(&MovingUpdateEvent{Location: &Location{
+				Latitude:  newLat,
+				Longitude: newLng,
+				Moving:    l.Moving,
+			},
+				DistanceTravelled: distanceMoved,
+				DistanceTotal:     distanceTotal,
+			})
+			if distanceMoved >= distanceTotal {
+				// Bot may be traveling too fast to get an accurate landing and
+				// might overshoot the location, once overshot
+				// default to the destination.
+				l.SetLatitude(Locnum(newLoc.Latitude))
+				l.SetLongitude(Locnum(newLoc.Longitude))
+				l.client.Emit(&MovingDoneEvent{l})
 				stop = true
-				l.Moving.IsMoving = false
-				l.client.Emit(&MovingDoneEvent{})
-				break
-			case <-ticker:
-				deltaLat := (newLoc.Latitude - l.Latitude) * (distanceMoved / distanceTotal)
-				deltaLng := (newLoc.Longitude - l.Longitude) * (distanceMoved / distanceTotal)
-				newLat := l.GetLatitudeF() + deltaLat
-				newLng := l.GetLongitudeF() + deltaLng
-				l.SetLatitude(Locnum(newLat))
-				l.SetLongitude(Locnum(newLng))
-				l.client.Emit(&MovingUpdateEvent{Location: &Location{
-					Latitude:  newLat,
-					Longitude: newLng,
-					Moving:    l.Moving,
-				},
-					DistanceTravelled: distanceMoved,
-					DistanceTotal:     distanceTotal,
-				})
-				if distanceActuallyTravelled >= distanceToMove {
-					// Bot may be traveling too fast to get an accurate landing and
-					// might overshoot the location, once overshot
-					// default to the destination.
-					l.SetLatitude(Locnum(newLoc.Latitude))
-					l.SetLongitude(Locnum(newLoc.Longitude))
-					l.client.Emit(&MovingDoneEvent{l})
-					stop = true
-				}
-				distanceMoved = distanceMoved + speed
-				l.Moving.DistanceTravelled = distanceMoved
 			}
+			distanceMoved = distanceMoved + speed
+			l.Moving.DistanceTravelled = distanceMoved
 		}
-	}(newLoc, distanceToMove, distanceActuallyTravelled)
+	}
 
 }
 
+// Make the bot stop moving and sit in place
 func (m *Moving) Sit(client *Client) {
 	if m.IsMoving {
 		m.Stop <- true

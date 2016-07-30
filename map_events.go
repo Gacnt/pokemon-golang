@@ -5,19 +5,23 @@ import "github.com/pkmngo-odi/pogo-protos"
 type MapDataEvent struct{}
 
 type NearbyPokemonEvent struct {
-	Pokemons []*protos.NearbyPokemon
+	Pokemons *NearbyPokemon
 }
 
 type WildPokemonEvent struct {
-	Pokemons []*protos.WildPokemon
+	Pokemons *WildPokemon
 }
 
 type CatchablePokemonEvent struct {
-	Pokemons []*protos.MapPokemon
+	Pokemons *CatchablePokemon
 }
 
 type FortEvent struct {
-	Forts []*protos.FortData
+	Forts *Forts
+}
+
+type GymEvent struct {
+	Gyms *Gyms
 }
 
 type FortSummariesEvent struct {

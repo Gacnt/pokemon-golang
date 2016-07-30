@@ -74,16 +74,42 @@ func GetMapData(client *Client) {
 	client.Emit(&MapObjectsEvent{respMapObj.MapCells})
 	for _, m := range respMapObj.MapCells {
 		if len(m.NearbyPokemons) > 0 {
-			client.Emit(&NearbyPokemonEvent{})
+			nearby := &NearbyPokemon{
+				m.NearbyPokemons,
+			}
+			client.Emit(&NearbyPokemonEvent{nearby})
 		}
 		if len(m.WildPokemons) > 0 {
-			client.Emit(&WildPokemonEvent{m.WildPokemons})
+			wild := &WildPokemon{
+				m.WildPokemons,
+			}
+			client.Emit(&WildPokemonEvent{wild})
 		}
 		if len(m.CatchablePokemons) > 0 {
-			client.Emit(&CatchablePokemonEvent{m.CatchablePokemons})
+			catchable := &CatchablePokemon{
+				m.CatchablePokemons,
+			}
+			client.Emit(&CatchablePokemonEvent{catchable})
 		}
 		if len(m.Forts) > 0 {
-			client.Emit(&FortEvent{m.Forts})
+			fortsSl := []*protos.FortData{}
+			gyms := []*protos.FortData{}
+
+			for _, f := range m.Forts {
+				if f.Type.String() == "GYM" {
+					gyms = append(gyms, f)
+				} else if f.Type.String() == "CHECKPOINT" {
+					fortsSl = append(fortsSl, f)
+				}
+			}
+			forts := &Forts{
+				fortsSl,
+			}
+			gym := &Gyms{
+				gyms,
+			}
+			client.Emit(&FortEvent{forts})
+			client.Emit(&GymEvent{gym})
 		}
 		if len(m.FortSummaries) > 0 {
 			client.Emit(&FortSummariesEvent{m.FortSummaries})
