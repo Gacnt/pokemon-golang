@@ -9,7 +9,7 @@ implementation of Pokemon-Gos API for easily building a fast, reliable, automate
 - [x] Authentication with Google
 - [x] Authentication with Pokemon Trainers Club
 - [x] View Pokemon / Forts Nearby You
-- [ ] Visit Pokestops
+- [x] Visit Pokestops
 - [x] Farm Pokestops
 - [x] GPS Spoofing interpolated as Human
 - [ ] Catch Pokemon
