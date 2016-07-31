@@ -1,6 +1,7 @@
 package pgo
 
 import (
+	"log"
 	"math"
 	"strconv"
 	"time"
@@ -146,6 +147,8 @@ func (l *Location) Teleport(newLoc *Location) {
 // running this function in its own goroutine
 func (l *Location) Move(newLoc *Location, speed float64) {
 
+	log.Println("HEREEEEE")
+
 	// Check if bot is already moving
 	if l.Moving.IsMoving {
 		// If Bot is moving block until the channel is read from
@@ -154,6 +157,7 @@ func (l *Location) Move(newLoc *Location, speed float64) {
 		l.client.Emit(&MovingDirectionChangedEvent{newLoc})
 	}
 
+	log.Println("Running1")
 	// Set IsMoving to true so the bot knows it is currently moving in the world
 	l.Moving.IsMoving = true
 
@@ -174,6 +178,8 @@ func (l *Location) Move(newLoc *Location, speed float64) {
 	distanceMoved := 0.0
 
 	l.Moving.Distance = distanceTotal
+
+	log.Println("Here2")
 
 	// Using the found distance of `distanceToMove` calculate and move
 	// to the next point with the set speed in `meters per second`
@@ -209,12 +215,15 @@ func (l *Location) Move(newLoc *Location, speed float64) {
 				l.SetLatitude(Locnum(newLoc.Latitude))
 				l.SetLongitude(Locnum(newLoc.Longitude))
 				l.client.Emit(&MovingDoneEvent{l})
+				l.Moving.IsMoving = false
 				stop = true
 			}
 			distanceMoved = distanceMoved + speed
 			l.Moving.DistanceTravelled = distanceMoved
 		}
 	}
+
+	log.Println("Here3")
 
 }
 

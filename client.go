@@ -17,6 +17,8 @@ type Client struct {
 
 	Location *Location
 
+	Task *Task
+
 	events   chan interface{}
 	writeBuf *bytes.Buffer
 }
@@ -35,6 +37,7 @@ func NewClient() *Client {
 	client.Auth = &Auth{client: client}
 	client.Location = &Location{client: client}
 	client.Location.Moving = &Moving{Stop: make(chan interface{})}
+	client.Task = &Task{add: make(chan Job, 10), stop: make(chan interface{})}
 
 	return client
 }
