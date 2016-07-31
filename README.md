@@ -6,13 +6,15 @@ very simple API
 Driven by Go's channels, concurrency, and amazingly fast protobuf interacting, this is aimed to be the fastest 
 implementation of Pokemon-Gos API for easily building a fast, reliable, automated bot.
 
+**TODO**
+
 - [x] Authentication with Google
 - [x] Authentication with Pokemon Trainers Club
 - [x] View Pokemon / Forts Nearby You
 - [x] Visit Pokestops
 - [x] Farm Pokestops
-- [x] GPS Spoofing interpolated as Human
-- [x] Tasking system
+- [x] GPS Spoofing Interpolated As Human
+- [x] Tasking System
 - [ ] Catch Pokemon
 - [ ] Catch Only Certain Pokemon
 - [ ] Remove Excess Items When Over X Quantities
@@ -21,7 +23,7 @@ implementation of Pokemon-Gos API for easily building a fast, reliable, automate
 - [ ] Evolve Pokemon
 - [ ] Make Errors More Descriptive For Easier Debugging
 
-TODO Extras:
+**TODO Extras**
 
 - Add priority system to the tasking system to deem certain things more important so they run before other things (e.g. catch a rare pokemon over visiting a pokestop)
 
