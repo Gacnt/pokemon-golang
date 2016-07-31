@@ -12,6 +12,7 @@ implementation of Pokemon-Gos API for easily building a fast, reliable, automate
 - [x] Visit Pokestops
 - [x] Farm Pokestops
 - [x] GPS Spoofing interpolated as Human
+- [x] Tasking system
 - [ ] Catch Pokemon
 - [ ] Catch Only Certain Pokemon
 - [ ] Remove Excess Items When Over X Quantities
@@ -19,6 +20,10 @@ implementation of Pokemon-Gos API for easily building a fast, reliable, automate
 - [ ] Auto Hatch Eggs
 - [ ] Evolve Pokemon
 - [ ] Make Errors More Descriptive For Easier Debugging
+
+TODO Extras:
+
+- Add priority system to the tasking system to deem certain things more important so they run before other things (e.g. catch a rare pokemon over visiting a pokestop)
 
 # Example Usage
 
@@ -55,37 +60,23 @@ func main() {
 		case *pgo.LocationSet:
 			log.Println("Location has been set")
 			log.Printf("%+v", *e.Location)
-			client.Location.Move(&pgo.Location{
-				Latitude:  56.654504464478116,
-				Longitude: -111.33012771606445,
-			}, 15.3)
-
-			// Demonstrating changing paths mid-stride
-			go func() {
-				time.Sleep(3 * time.Second)
-				client.Location.Move(&pgo.Location{
-					Latitude:  57.654504464478,
-					Longitude: -112.3301277160,
-				}, 15.3)
-			}()
-		case *pgo.MovingDirectionChangedEvent:
-			log.Println("Changing Directions")
 		case *pgo.MovingUpdateEvent:
-			log.Printf("Latitude: %v Longitude: %v ............ Distance Travelled: %v Distance Total: %v",
-				e.Location.Latitude, e.Location.Longitude, e.DistanceTravelled, e.DistanceTotal)
-		case *pgo.MovingDoneEvent:
-			log.Println("DONE")
-		case *pgo.NearbyPokemonEvent:
-			log.Println(e)
-		case *pgo.WildPokemonEvent:
-			log.Println(e)
-		case *pgo.CatchablePokemonEvent:
-			log.Println(e)
+			log.Println("Bot is walking")
+			log.Println(e.DistanceTravelled, e.DistanceTotal)
+		case *pgo.MovingDirectionChangedEvent:
+			log.Println("Changed")
+		case *pgo.FortSearchedEvent:
+			log.Printf("%+v", e.Result)
+		case *pgo.FortEvent:
+			log.Println("Fort Event----------------------")
+
+			// Task will get pushed to the tasker and executed in the order they are recieved
+			client.Task.AddFunc(func() {
+				e.Forts.Search(client)
+			})
 		case *pgo.FatalErrorEvent:
 			log.Println(e.Err)
-
 		default:
-			log.Printf("Uncaught Event was fired: \nType: %v\n Value: %+v", reflect.TypeOf(e), e)
 		}
 	}
 }
