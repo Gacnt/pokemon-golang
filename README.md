@@ -6,6 +6,8 @@ very simple API
 Driven by Go's channels, concurrency, and amazingly fast protobuf interacting, this is aimed to be the fastest 
 implementation of Pokemon-Gos API for easily building a fast, reliable, automated bot.
 
+Please look at the dev branch if there haven't been any commits to the master branch in a bit.
+
 **TODO**
 
 - [x] Authentication with Google
