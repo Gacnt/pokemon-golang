@@ -78,7 +78,7 @@ func main() {
 			for _, fort := range e.Forts {
 				client.Task.AddFunc(fort.Id, func() {
 					fort.Search(client)
-				})
+				}) // ADD OPTIONAL PRIORITY SETTING AS 3RD PARAMETER
 			}
 		case *pgo.FatalErrorEvent:
 			log.Println(e.Err)
