@@ -45,24 +45,18 @@ func (t *Task) Clear() {
 	t.tasks = []JobToRun{}
 }
 
-func (t *Task) monitor() {
-	for t.Running {
-		for len(t.tasks) > 0 {
-			t.tasks[0].Job.Run()
-			t.tasks = t.tasks[1:]
-			time.Sleep(3 * time.Second)
-		}
-		time.Sleep(2 * time.Second)
-		log.Println("Ticking")
-	}
-}
-
 func (t *Task) run() {
-	t.Running = true
 	log.Println("Running")
-	go t.monitor()
 	for stop := false; !stop; {
 		select {
+		case <-time.Tick(2 * time.Second):
+			for len(t.tasks) > 0 {
+				t.tasks[0].Job.Run()
+				t.tasks = t.tasks[1:]
+				time.Sleep(3 * time.Second)
+			}
+			time.Sleep(2 * time.Second)
+			log.Println("Ticking")
 		case f := <-t.add:
 			found := false
 			for _, job := range t.tasks {

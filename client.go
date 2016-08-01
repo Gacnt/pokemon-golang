@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
+	"sync"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -21,6 +22,8 @@ type Client struct {
 
 	events   chan interface{}
 	writeBuf *bytes.Buffer
+
+	MU sync.Mutex
 }
 
 type Msg struct {

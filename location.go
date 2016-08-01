@@ -3,6 +3,7 @@ package pgo
 import (
 	"math"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/golang/geo/s2"
@@ -26,6 +27,8 @@ type Location struct {
 	Altitude  float64
 
 	Moving *Moving
+
+	MU sync.Mutex
 }
 
 type Moving struct {
@@ -42,38 +45,56 @@ func (l *Locnum) String() string {
 }
 
 func (l *Location) SetLatitude(lat Locnum) {
+	l.MU.Lock()
+	defer l.MU.Unlock()
 	l.Latitude = float64(lat)
 }
 
 func (l *Location) SetLongitude(lon Locnum) {
+	l.MU.Lock()
+	defer l.MU.Unlock()
 	l.Longitude = float64(lon)
 }
 
 func (l *Location) SetAltitude(alt Locnum) {
+	l.MU.Lock()
+	defer l.MU.Unlock()
 	l.Altitude = float64(alt)
 }
 
 func (l *Location) GetLatitude() Locnum {
+	l.MU.Lock()
+	defer l.MU.Unlock()
 	return Locnum(l.Latitude)
 }
 
 func (l *Location) GetLongitude() Locnum {
+	l.MU.Lock()
+	defer l.MU.Unlock()
 	return Locnum(l.Longitude)
 }
 
 func (l *Location) GetAltitude() Locnum {
+	l.MU.Lock()
+	defer l.MU.Unlock()
 	return Locnum(l.Altitude)
 }
 
 func (l *Location) GetLatitudeF() float64 {
+	l.MU.Lock()
+	defer l.MU.Unlock()
 	return l.Latitude
 }
 
 func (l *Location) GetLongitudeF() float64 {
+	l.MU.Lock()
+	defer l.MU.Unlock()
 	return l.Longitude
 }
 
 func (l *Location) GetAltitudeF() float64 {
+	l.MU.Lock()
+	defer l.MU.Unlock()
 	return l.Altitude
 }
 
@@ -109,7 +130,7 @@ func (l *Location) SetByCoords(lat, lng, alt float64) {
 }
 
 func (l *Location) GetNeighbors() []uint64 {
-	ll := s2.LatLngFromDegrees(l.Latitude, l.Longitude)
+	ll := s2.LatLngFromDegrees(l.GetLatitudeF(), l.GetLongitudeF())
 	cid := s2.CellIDFromLatLng(ll).Parent(15)
 
 	walker := []uint64{uint64(cid)}
