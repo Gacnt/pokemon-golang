@@ -58,9 +58,12 @@ func main() {
 			client.Auth.Login()
 		case *pgo.LoggedOnEvent:
 			client.SetAPIUrl(e.APIUrl)
-			/*go func() {
-				pgo.GetMapData(client)
-			}()*/
+			go func() {
+				for {
+					go pgo.GetMapData(client)
+					time.Sleep(2 * time.Second)
+				}
+			}()
 		case *pgo.LocationSet:
 			log.Println("Location has been set")
 			log.Printf("%+v", *e.Location)
@@ -72,15 +75,15 @@ func main() {
 		case *pgo.FortSearchedEvent:
 			log.Printf("%+v", e.Result)
 		case *pgo.FortEvent:
-			log.Println("Fort Event----------------------")
-
-			// Task will get pushed to the tasker and executed in the order they are recieved
-			client.Task.AddFunc(func() {
-				e.Forts.Search(client)
-			})
+			for _, fort := range e.Forts {
+				client.Task.AddFunc(fort.Id, func() {
+					fort.Search(client)
+				})
+			}
 		case *pgo.FatalErrorEvent:
 			log.Println(e.Err)
 		default:
+
 		}
 	}
 }
