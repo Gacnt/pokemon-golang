@@ -92,23 +92,20 @@ func GetMapData(client *Client) {
 			client.Emit(&CatchablePokemonEvent{catchable})
 		}
 		if len(m.Forts) > 0 {
-			fortsSl := []*protos.FortData{}
+			fortsSl := []*Fort{}
 			gyms := []*protos.FortData{}
 
 			for _, f := range m.Forts {
 				if f.Type.String() == "GYM" {
 					gyms = append(gyms, f)
 				} else if f.Type.String() == "CHECKPOINT" {
-					fortsSl = append(fortsSl, f)
+					fortsSl = append(fortsSl, &Fort{FortData: f})
 				}
-			}
-			forts := &Forts{
-				fortsSl,
 			}
 			gym := &Gyms{
 				gyms,
 			}
-			client.Emit(&FortEvent{forts})
+			client.Emit(&FortEvent{fortsSl})
 			client.Emit(&GymEvent{gym})
 		}
 		if len(m.FortSummaries) > 0 {

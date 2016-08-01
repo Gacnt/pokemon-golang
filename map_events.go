@@ -17,7 +17,7 @@ type CatchablePokemonEvent struct {
 }
 
 type FortEvent struct {
-	Forts *Forts
+	Forts []*Fort
 }
 
 type GymEvent struct {
