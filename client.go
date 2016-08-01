@@ -40,7 +40,7 @@ func NewClient() *Client {
 	client.Auth = &Auth{client: client}
 	client.Location = &Location{client: client}
 	client.Location.Moving = &Moving{Stop: make(chan interface{})}
-	client.Task = &Task{add: make(chan JobToRun, 10), stop: make(chan interface{})}
+	client.Task = &Task{add: make(chan JobToRun, 10), stop: make(chan interface{}), MaxTasks: 10}
 
 	return client
 }
